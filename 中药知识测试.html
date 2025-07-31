@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中药知识测验</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .quiz-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .question {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .options {
+            margin-left: 10px;
+        }
+        .option {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: block; /* 确保每个选项在新行上 */
+        }
+        .option:hover {
+            background-color: #e8f4fc;
+        }
+        .option input[type="radio"] {
+            margin-right: 10px;
+        }
+        .feedback {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .submit-btn, .restart-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover, .restart-btn:hover {
+            background-color: #2980b9;
+        }
+        .score-display {
+            text-align: center;
+            font-size: 18px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .restart-btn {
+            display: block;
+            margin: 20px auto;
+            background-color: #9b59b6;
+        }
+        .restart-btn:hover {
+            background-color: #8e44ad;
+        }
+    </style>
+</head>
+<body>
+    <h1>中药知识测验</h1>
+    
+    <div id="quizContainer">
+        <!-- 题目将在这里动态添加 -->
+    </div>
+    
+    <div class="score-display" id="scoreDisplay">得分: 0/0</div>
+    
+    <button class="restart-btn" onclick="restartQuiz()">↻ 重新考试</button>
+    
+    <script>
+        let score = 0;
+        let totalQuestions = 0;
+        let answeredQuestions = 0;
+        let currentQuestions = [];
+        
+        // 所有题目数据
+const questionsData = [
+            {
+                question: "淡竹叶的主要功效是？",
+                options: ["A. 温阳散寒", "B. 清心泄热，除烦止渴", "C. 活血化瘀", "D. 补气健脾"],
+                answer: "B"
+            },
+            {
+                question: "淡竹叶常用于治疗以下哪种症状？",
+                options: ["A. 寒战无汗", "B. 热病津伤口渴", "C. 腰膝酸软", "D. 食欲不振"],
+                answer: "B"
+            },
+            {
+                question: "淡竹叶与哪种药材常配伍用于口疮尿赤？",
+                options: ["A. 黄芪", "B. 滑石、白茅根", "C. 当归", "D. 人参"],
+                answer: "B"
+            },
+            {
+                question: "栀子的性味是？",
+                options: ["A. 甘温", "B. 苦寒", "C. 辛热", "D. 咸寒"],
+                answer: "B"
+            },
+            {
+                question: "栀子常用于治疗以下哪种症状？",
+                options: ["A. 风寒感冒", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+                answer: "B"
+            },
+    {
+        question: "栀子与哪种药材合用可治疗湿热黄疸？",
+        options: ["A. 茵陈、大黄", "B. 人参", "C. 白术", "D. 甘草"],
+        answer: "A"
+    },
+    {
+        question: "密蒙花主要用于治疗？",
+        options: ["A. 风寒头痛", "B. 肝热目赤肿痛", "C. 脾胃虚寒", "D. 肺热咳嗽"],
+        answer: "B"
+    },
+    {
+        question: "夏枯草的主要功效是？",
+        options: ["A. 补血养阴", "B. 清泄肝火，消肿止痛", "C. 温肾壮阳", "D. 健脾益气"],
+        answer: "B"
+    },
+    {
+        question: "夏枯草常用于治疗以下哪种症状？",
+        options: ["A. 肝火上炎，目赤肿痛", "B. 肾虚腰痛", "C. 肺热咳嗽", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "细辛的主要功效是？",
+        options: ["A. 清热解毒", "B. 祛风散寒，通窍止痛", "C. 补气养血", "D. 滋阴润燥"],
+        answer: "B"
+    },
+    {
+        question: "细辛常用于治疗以下哪种症状？",
+        options: ["A. 风寒感冒，头痛鼻塞", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚寒"],
+        answer: "A"
+    },
+    {
+        question: "辛夷的主要功效是？",
+        options: ["A. 清热解毒", "B. 散风寒，通鼻窍", "C. 补气健脾", "D. 活血化瘀"],
+        answer: "B"
+    },
+    {
+        question: "辛夷常用于治疗以下哪种症状？",
+        options: ["A. 风寒头痛，鼻塞", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "苍耳子的主要功效是？",
+        options: ["A. 祛风除湿，通窍止痛", "B. 补气养血", "C. 清热解毒", "D. 滋阴润燥"],
+        answer: "A"
+    },
+    {
+        question: "苍耳子常用于治疗以下哪种症状？",
+        options: ["A. 鼻渊头痛，风寒头痛", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "葱白的主要功效是？",
+        options: ["A. 发汗解表，散寒通阳", "B. 清热解毒", "C. 补气养血", "D. 滋阴润燥"],
+        answer: "A"
+    },
+    {
+        question: "葱白常用于治疗以下哪种症状？",
+        options: ["A. 风寒感冒", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "薄荷的主要功效是？",
+        options: ["A. 疏散风热，清利头目", "B. 补气养血", "C. 清热解毒", "D. 滋阴润燥"],
+        answer: "A"
+    },
+    {
+        question: "薄荷常用于治疗以下哪种症状？",
+        options: ["A. 风热感冒，头痛目赤", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "牛蒡子的主要功效是？",
+        options: ["A. 疏散风热，宣肺利咽", "B. 补气养血", "C. 清热解毒", "D. 滋阴润燥"],
+        answer: "A"
+    },
+    {
+        question: "牛蒡子常用于治疗以下哪种症状？",
+        options: ["A. 风热感冒，咽喉肿痛", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "柴胡的主要功效是？",
+        options: ["A. 疏散退热，疏肝解郁", "B. 补气养血", "C. 清热解毒", "D. 滋阴润燥"],
+        answer: "A"
+    },
+    {
+        question: "柴胡常用于治疗以下哪种症状？",
+        options: ["A. 邪在少阳，寒热往来", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "桑叶的主要功效是？",
+        options: ["A. 疏散风热，清肺止咳", "B. 补气养血", "C. 清热解毒", "D. 滋阴润燥"],
+        answer: "A"
+    },
+    {
+        question: "桑叶常用于治疗以下哪种症状？",
+        options: ["A. 风热感冒，肺热燥咳", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "菊花的主要功效是？",
+        options: ["A. 疏散风热，清肝明目", "B. 补气养血", "C. 清热解毒", "D. 滋阴润燥"],
+        answer: "A"
+    },
+    {
+        question: "菊花常用于治疗以下哪种症状？",
+        options: ["A. 风热感冒，目赤肿痛", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "升麻的主要功效是？",
+        options: ["A. 发表透疹，清热解毒", "B. 补气养血", "C. 清热解毒", "D. 滋阴润燥"],
+        answer: "A"
+    },
+    {
+        question: "升麻常用于治疗以下哪种症状？",
+        options: ["A. 麻疹透发不畅", "B. 湿热黄疸", "C. 血虚头晕", "D. 脾胃虚弱"],
+        answer: "A"
+    },
+    {
+        question: "葛根的主要功效是？",
+        options: ["A. 解肌退热，生津止渴", "B. 补气养血", "C. 清热解毒", "D. 滋阴润燥"],
+        answer: "A"
+    },
+    {
+        question: "石膏的主要功效是？",
+        options: ["A. 清热泻火，除烦止渴", "B. 活血化瘀", "C. 补气健脾", "D. 温阳散寒"],
+        answer: "A"
+    },
+    {
+        question: "石膏常用于治疗以下哪种症状？",
+        options: ["A. 高热烦渴，肺热喘咳", "B. 血虚头晕", "C. 脾胃虚弱", "D. 肾阳不足"],
+        answer: "A"
+    },
+    {
+        question: "知母的主要功效是？",
+        options: ["A. 清热泻火，滋阴润燥", "B. 活血化瘀", "C. 补气健脾", "D. 温阳散寒"],
+        answer: "A"
+    },
+    {
+        question: "知母常用于治疗以下哪种症状？",
+        options: ["A. 肺热咳嗽，阴虚燥咳", "B. 血虚头晕", "C. 脾胃虚弱", "D. 肾阳不足"],
+        answer: "A"
+    },
+    {
+        question: "决明子的主要功效是？",
+        options: ["A. 清肝明目，润肠通便", "B. 活血化瘀", "C. 补气健脾", "D. 温阳散寒"],
+        answer: "A"
+    },
+    {
+        question: "决明子常用于治疗以下哪种症状？",
+        options: ["A. 肝热目赤，肠燥便秘", "B. 血虚头晕", "C. 脾胃虚弱", "D. 肾阳不足"],
+        answer: "A"
+    },
+    {
+        question: "谷精草的主要功效是？",
+        options: ["A. 疏散风热，明目退翳", "B. 活血化瘀", "C. 补气健脾", "D. 温阳散寒"],
+        answer: "A"
+    },
+    {
+        question: "谷精草常用于治疗以下哪种症状？",
+        options: ["A. 风热目赤，翳膜遮睛", "B. 血虚头晕", "C. 脾胃虚弱", "D. 肾阳不足"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗风热感冒？",
+        options: ["A. 薄荷、牛蒡子、桑叶", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗肝火上炎？",
+        options: ["A. 夏枯草、菊花、决明子", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗湿热黄疸？",
+        options: ["A. 栀子、茵陈、大黄", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗麻疹不透？",
+        options: ["A. 升麻、葛根、薄荷", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗肺热咳嗽？",
+        options: ["A. 桑叶、知母、石膏", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗阴虚燥咳？",
+        options: ["A. 知母、贝母、麦冬", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗胃火上攻？",
+        options: ["A. 石膏、黄连、升麻", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗气虚下陷？",
+        options: ["A. 升麻、柴胡、黄芪", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗肝郁气滞？",
+        options: ["A. 柴胡、白芍、香附", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗风寒头痛？",
+        options: ["A. 细辛、白芷、羌活", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗风疹瘙痒？",
+        options: ["A. 薄荷、蝉蜕、防风", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    },
+    {
+        question: "下列哪组药物常用于治疗目赤肿痛？",
+        options: ["A. 菊花、决明子、夏枯草", "B. 附子、干姜、肉桂", "C. 人参、黄芪、白术", "D. 当归、熟地、白芍"],
+        answer: "A"
+    }
+];
+        
+        // 随机排列数组
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+        
+        // 准备题目数据（随机题目和选项顺序）
+        function prepareQuestions() {
+            const shuffledQuestions = shuffleArray(questionsData);
+            return shuffledQuestions.map(question => {
+                const originalAnswer = question.answer;
+                const optionPairs = question.options.map(opt => ({
+                    letter: opt.charAt(0),
+                    text: opt.substring(3)
+                }));
+                const shuffledOptions = shuffleArray(optionPairs);
+                const newOptions = shuffledOptions.map((opt, index) => {
+                    const newLetter = String.fromCharCode(65 + index);
+                    return `${newLetter}. ${opt.text}`;
+                });
+                const originalOption = optionPairs.find(opt => opt.letter === originalAnswer);
+                const newAnswerIndex = shuffledOptions.findIndex(opt => 
+                    opt.text === originalOption.text
+                );
+                const newAnswer = String.fromCharCode(65 + newAnswerIndex);
+                return {
+                    question: question.question,
+                    options: newOptions,
+                    answer: newAnswer
+                };
+            });
+        }
+        
+        // 初始化测验
+        function initQuiz() {
+            const quizContainer = document.getElementById('quizContainer');
+            quizContainer.innerHTML = '';
+            currentQuestions = prepareQuestions();
+            totalQuestions = currentQuestions.length;
+            
+            currentQuestions.forEach((questionData, index) => {
+                const questionNumber = index + 1;
+                const questionId = 'q' + questionNumber;
+                const feedbackId = 'feedback' + questionNumber;
+                
+                const questionHTML = `
+                    <div id="quiz${questionNumber}" class="quiz-container">
+                        <div class="question">${questionNumber}. ${questionData.question}</div>
+                        <div class="options" id="options${questionNumber}">
+                            ${questionData.options.map(option => `
+                                <label class="option">
+                                    <input type="radio" name="${questionId}" value="${option.charAt(0)}">
+                                    ${option}
+                                </label>
+                            `).join('')}
+                        </div>
+                        <button class="submit-btn" onclick="checkAnswer('${questionId}', '${questionData.answer}', '${feedbackId}', ${questionNumber})">提交答案</button>
+                        <div id="${feedbackId}" class="feedback"></div>
+                    </div>
+                `;
+                
+                quizContainer.insertAdjacentHTML('beforeend', questionHTML);
+            });
+            
+            resetScore();
+        }
+        
+        // 检查答案
+        function checkAnswer(questionName, correctAnswer, feedbackId, questionNumber) {
+            const selectedOption = document.querySelector(`input[name="${questionName}"]:checked`);
+            const feedbackElement = document.getElementById(feedbackId);
+            const questionElement = document.getElementById('quiz' + questionNumber);
+            
+            if (!selectedOption) {
+                feedbackElement.textContent = "请先选择一个答案！";
+                feedbackElement.className = "feedback incorrect";
+                feedbackElement.style.display = "block";
+                return;
+            }
+            
+            const userAnswer = selectedOption.value;
+            if (userAnswer === correctAnswer) {
+                feedbackElement.textContent = "✓ 回答正确！";
+                feedbackElement.className = "feedback correct";
+                score++;
+            } else {
+                feedbackElement.textContent = `✗ 回答错误。正确答案是: ${correctAnswer}`;
+                feedbackElement.className = "feedback incorrect";
+            }
+            
+            feedbackElement.style.display = "block";
+            answeredQuestions++;
+            updateScore();
+            
+            const options = document.querySelectorAll(`#quiz${questionNumber} input[name="${questionName}"]`);
+            options.forEach(option => {
+                option.disabled = true;
+            });
+            questionElement.querySelector('.submit-btn').disabled = true;
+        }
+        
+        // 更新分数显示
+        function updateScore() {
+            document.getElementById("scoreDisplay").textContent = `得分: ${score}/${answeredQuestions}`;
+        }
+        
+        // 重置分数
+        function resetScore() {
+            score = 0;
+            answeredQuestions = 0;
+            updateScore();
+        }
+        
+        // 重新考试
+        function restartQuiz() {
+            if (confirm('确定要重新开始考试吗？当前进度将丢失。')) {
+                initQuiz();
+            }
+        }
+        
+        // 初始化测验
+        initQuiz();
+    </script>
+</body>
+</html>
